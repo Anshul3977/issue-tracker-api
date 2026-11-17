@@ -2,7 +2,9 @@
 
 Async FastAPI issue tracker for a new-grad backend portfolio: workspaces, projects, issues, and comments, with a Redis cache, cross-worker WebSocket fanout, and a measured Postgres index on the list query.
 
-**Live demo:** _deploy the Blueprint, then paste the service URL here._
+**Live demo:** https://issue-tracker-api-29pv.onrender.com (interactive API docs at [/docs](https://issue-tracker-api-29pv.onrender.com/docs); Render free tier, so the first request after the service has been idle can take about a minute).
+
+12 automated pytest tests (auth and API keys, workspace/project/issue/comment CRUD, validation and cross-workspace isolation, filters and keyset pagination, Redis cache invalidation, WebSocket events, config, health and readiness, and the migrated list index), run in GitHub Actions CI against Postgres and Redis service containers.
 
 Author: Anshul Palarpwar.
 
@@ -232,7 +234,7 @@ The full plans are in `benchmarks/explain_before.txt` and `benchmarks/explain_af
 3. Confirm the three resources are all on the **free** plan: web service `issue-tracker-api`, Postgres `issue-tracker-db`, Key Value `issue-tracker-kv`. Do not accept a paid plan.
 4. When Render prompts for `BOOTSTRAP_TOKEN`, set a long random value. It is not in the repo.
 5. Deploy. `preDeployCommand` runs `alembic upgrade head`. The container also migrates on start and listens on `0.0.0.0:$PORT`.
-6. Open `https://<service>.onrender.com/ready`, then register a user with the bootstrap token. Paste the service URL into the live-demo line at the top of this file.
+6. Open `https://<service>.onrender.com/ready`, then register a user with the bootstrap token.
 
 `DATABASE_URL` and `REDIS_URL` are wired with `fromDatabase` and `fromService` to the internal addresses. The app rewrites `postgres://` to `postgresql+asyncpg://` and moves `sslmode` into asyncpg's SSL argument. Both data stores have `ipAllowList: []`, so they accept connections from the web service and not from the public internet.
 

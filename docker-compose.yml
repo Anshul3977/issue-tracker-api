@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: issue
+      POSTGRES_PASSWORD: issue
+      POSTGRES_DB: issue_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - max_connections=100
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U issue -d issue_tracker"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://issue:issue@postgres:5432/issue_tracker
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: local
+      LOG_LEVEL: info
+      BOOTSTRAP_TOKEN: local-bootstrap-token
+      SEED_API_KEY: local-dev-api-key
+      PORT: "8000"
+      DB_POOL_SIZE: "5"
+      DB_MAX_OVERFLOW: "5"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:

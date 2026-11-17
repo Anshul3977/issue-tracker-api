@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Issue Tracker — live project feed</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #141210;
+      --panel: #211e1a;
+      --line: #3a342c;
+      --text: #f4efe6;
+      --muted: #b3a89a;
+      --accent: #e36a2f;
+      --ok: #7dcea0;
+      --bad: #e07a7a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.45 ui-sans-serif, system-ui, sans-serif;
+    }
+    header, main { width: min(1080px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 28px 0 12px; display: flex; justify-content: space-between; gap: 16px; align-items: end; }
+    h1 { font-size: 28px; font-weight: 560; letter-spacing: -0.03em; margin: 0; }
+    p.lede { margin: 6px 0 0; color: var(--muted); max-width: 46rem; }
+    a { color: var(--accent); }
+    main { display: grid; grid-template-columns: 320px 1fr; gap: 16px; padding-bottom: 40px; }
+    section { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+    h2 { margin: 0 0 12px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+    label { display: block; margin: 10px 0 4px; color: var(--muted); font-size: 13px; }
+    input, select, button { width: 100%; font: inherit; color: var(--text); background: #12100e; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+    button { cursor: pointer; background: var(--accent); color: #1a100c; border: 0; font-weight: 650; margin-top: 12px; }
+    button.secondary { background: transparent; color: var(--text); border: 1px solid var(--line); }
+    .status { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--muted); }
+    .status.ok { color: var(--ok); }
+    .status.bad { color: var(--bad); }
+    #events { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; min-height: 420px; }
+    #events li { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+    #events strong { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; color: var(--accent); }
+    #events p { margin: 6px 0 0; }
+    #events time { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Issue Tracker</h1>
+      <p class="lede">Live project feed. Events arrive over a WebSocket that is fanned out through Redis, so any API worker can publish them.</p>
+    </div>
+    <a href="/docs">API docs</a>
+  </header>
+  <main>
+    <section>
+      <h2>Connection</h2>
+      <label for="apiKey">API key</label>
+      <input id="apiKey" type="password" autocomplete="off" placeholder="X-API-Key">
+      <label for="projectId">Project id</label>
+      <input id="projectId" inputmode="numeric" placeholder="1">
+      <button id="connect" type="button">Connect</button>
+      <p id="status" class="status">Disconnected</p>
+      <h2 style="margin-top: 22px">Create an issue</h2>
+      <label for="title">Title</label>
+      <input id="title" placeholder="Pagination drops the sort">
+      <label for="state">State</label>
+      <select id="state">
+        <option>backlog</option>
+        <option selected>todo</option>
+        <option>in_progress</option>
+        <option>done</option>
+        <option>cancelled</option>
+      </select>
+      <button id="create" class="secondary" type="button">Create</button>
+      <p id="createStatus" class="status"></p>
+    </section>
+    <section>
+      <h2>Events</h2>
+      <ol id="events"></ol>
+    </section>
+  </main>
+  <script>
+    const statusEl = document.querySelector("#status");
+    const eventsEl = document.querySelector("#events");
+    const createStatus = document.querySelector("#createStatus");
+    let socket = null;
+
+    function setStatus(text, kind) {
+      statusEl.textContent = text;
+      statusEl.className = "status " + (kind || "");
+    }
+
+    function addEvent(payload) {
+      const item = document.createElement("li");
+      const kind = document.createElement("strong");
+      kind.textContent = payload.type || "message";
+      const body = document.createElement("p");
+      const data = payload.data || {};
+      body.textContent = data.title || data.body || JSON.stringify(data);
+      const time = document.createElement("time");
+      time.textContent = payload.occurred_at || "";
+      item.append(kind, body, time);
+      eventsEl.prepend(item);
+    }
+
+    document.querySelector("#connect").addEventListener("click", () => {
+      const apiKey = document.querySelector("#apiKey").value.trim();
+      const projectId = document.querySelector("#projectId").value.trim();
+      if (!apiKey || !projectId) {
+        setStatus("API key and project id are required", "bad");
+        return;
+      }
+      if (socket) socket.close();
+      const protocol = location.protocol === "https:" ? "wss" : "ws";
+      const url = protocol + "://" + location.host + "/ws/projects/" + encodeURIComponent(projectId) + "?api_key=" + encodeURIComponent(apiKey);
+      socket = new WebSocket(url);
+      socket.addEventListener("open", () => setStatus("Connected to project " + projectId, "ok"));
+      socket.addEventListener("message", (event) => {
+        try { addEvent(JSON.parse(event.data)); }
+        catch (_err) { addEvent({ type: "raw", data: { body: event.data } }); }
+      });
+      socket.addEventListener("close", () => setStatus("Disconnected", "bad"));
+      socket.addEventListener("error", () => setStatus("Socket error", "bad"));
+    });
+
+    document.querySelector("#create").addEventListener("click", async () => {
+      const apiKey = document.querySelector("#apiKey").value.trim();
+      const projectId = document.querySelector("#projectId").value.trim();
+      const title = document.querySelector("#title").value.trim();
+      const state = document.querySelector("#state").value;
+      createStatus.textContent = "";
+      const response = await fetch("/api/v1/issues", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+        body: JSON.stringify({ project_id: Number(projectId), title, state })
+      });
+      const body = await response.json();
+      createStatus.textContent = response.ok ? "Created #" + body.number : (body.error && body.error.message) || "Create failed";
+      createStatus.className = "status " + (response.ok ? "ok" : "bad");
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+# Free-tier Blueprint. Postgres expires 30 days after creation.
+# https://render.com/docs/free
+databases:
+  - name: issue-tracker-db
+    plan: free
+    region: oregon
+    databaseName: issue_tracker
+    user: issue_tracker
+    postgresMajorVersion: "16"
+    ipAllowList: []
+
+services:
+  - type: keyvalue
+    name: issue-tracker-kv
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  - type: web
+    name: issue-tracker-api
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    preDeployCommand: alembic upgrade head
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: issue-tracker-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: issue-tracker-kv
+          property: connectionString
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_POOL_SIZE
+        value: "5"
+      - key: DB_MAX_OVERFLOW
+        value: "5"
+      - key: CACHE_TTL_SECONDS
+        value: "60"
+      - key: BOOTSTRAP_TOKEN
+        sync: false

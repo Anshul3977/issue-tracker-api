@@ -1,0 +1,124 @@
+label: before
+captured_at: 2026-11-17T16:18:40.216849+00:00
+project_id: 1
+state: todo
+request_limit: 50
+sql_limit: 51
+statement: first page of GET /api/v1/issues?sort=created_at
+
+sql:
+SELECT issues.id, issues.project_id, issues.number, issues.title, issues.description, issues.state, issues.priority, issues.assignee_id, issues.created_at, issues.updated_at 
+FROM issues 
+WHERE issues.project_id = $1::BIGINT AND issues.state = $2::VARCHAR ORDER BY issues.created_at DESC, issues.id DESC 
+ LIMIT $3::INTEGER
+params:
+  project_id_1 = 1
+  state_1 = 'todo'
+  param_1 = 51
+
+indexes:
+  issues_pkey: CREATE UNIQUE INDEX issues_pkey ON public.issues USING btree (id)
+  ix_issues_assignee_id: CREATE INDEX ix_issues_assignee_id ON public.issues USING btree (assignee_id)
+  ix_issues_project_id: CREATE INDEX ix_issues_project_id ON public.issues USING btree (project_id)
+  uq_issues_project_number: CREATE UNIQUE INDEX uq_issues_project_number ON public.issues USING btree (project_id, number)
+
+--- run 1 ---
+Limit  (cost=14726.11..14732.07 rows=51 width=114) (actual time=18.007..20.388 rows=51 loops=1)
+  Buffers: shared hit=9232
+  ->  Gather Merge  (cost=14726.11..24917.66 rows=87350 width=114) (actual time=18.006..20.383 rows=51 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=9232
+        ->  Sort  (cost=13726.09..13835.28 rows=43675 width=114) (actual time=15.995..15.998 rows=40 loops=3)
+              Sort Key: created_at DESC, id DESC
+              Sort Method: top-N heapsort  Memory: 47kB
+              Buffers: shared hit=9232
+              Worker 0:  Sort Method: top-N heapsort  Memory: 46kB
+              Worker 1:  Sort Method: top-N heapsort  Memory: 46kB
+              ->  Parallel Seq Scan on issues  (cost=0.00..12269.00 rows=43675 width=114) (actual time=0.008..13.095 rows=35067 loops=3)
+                    Filter: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+                    Rows Removed by Filter: 131600
+                    Buffers: shared hit=9144
+Planning Time: 0.060 ms
+Execution Time: 20.416 ms
+
+--- run 2 ---
+Limit  (cost=14726.11..14732.07 rows=51 width=114) (actual time=17.290..19.421 rows=51 loops=1)
+  Buffers: shared hit=9232
+  ->  Gather Merge  (cost=14726.11..24917.66 rows=87350 width=114) (actual time=17.289..19.416 rows=51 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=9232
+        ->  Sort  (cost=13726.09..13835.28 rows=43675 width=114) (actual time=15.309..15.312 rows=38 loops=3)
+              Sort Key: created_at DESC, id DESC
+              Sort Method: top-N heapsort  Memory: 46kB
+              Buffers: shared hit=9232
+              Worker 0:  Sort Method: top-N heapsort  Memory: 46kB
+              Worker 1:  Sort Method: top-N heapsort  Memory: 47kB
+              ->  Parallel Seq Scan on issues  (cost=0.00..12269.00 rows=43675 width=114) (actual time=0.008..12.422 rows=35067 loops=3)
+                    Filter: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+                    Rows Removed by Filter: 131600
+                    Buffers: shared hit=9144
+Planning Time: 0.053 ms
+Execution Time: 19.447 ms
+
+--- run 3 ---
+Limit  (cost=14726.11..14732.07 rows=51 width=114) (actual time=16.853..19.222 rows=51 loops=1)
+  Buffers: shared hit=9232
+  ->  Gather Merge  (cost=14726.11..24917.66 rows=87350 width=114) (actual time=16.852..19.218 rows=51 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=9232
+        ->  Sort  (cost=13726.09..13835.28 rows=43675 width=114) (actual time=14.879..14.882 rows=41 loops=3)
+              Sort Key: created_at DESC, id DESC
+              Sort Method: top-N heapsort  Memory: 47kB
+              Buffers: shared hit=9232
+              Worker 0:  Sort Method: top-N heapsort  Memory: 46kB
+              Worker 1:  Sort Method: top-N heapsort  Memory: 46kB
+              ->  Parallel Seq Scan on issues  (cost=0.00..12269.00 rows=43675 width=114) (actual time=0.007..12.007 rows=35067 loops=3)
+                    Filter: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+                    Rows Removed by Filter: 131600
+                    Buffers: shared hit=9144
+Planning Time: 0.053 ms
+Execution Time: 19.249 ms
+
+--- run 4 ---
+Limit  (cost=14726.11..14732.07 rows=51 width=114) (actual time=16.792..19.026 rows=51 loops=1)
+  Buffers: shared hit=9232
+  ->  Gather Merge  (cost=14726.11..24917.66 rows=87350 width=114) (actual time=16.792..19.021 rows=51 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=9232
+        ->  Sort  (cost=13726.09..13835.28 rows=43675 width=114) (actual time=14.813..14.816 rows=41 loops=3)
+              Sort Key: created_at DESC, id DESC
+              Sort Method: top-N heapsort  Memory: 47kB
+              Buffers: shared hit=9232
+              Worker 0:  Sort Method: top-N heapsort  Memory: 45kB
+              Worker 1:  Sort Method: top-N heapsort  Memory: 46kB
+              ->  Parallel Seq Scan on issues  (cost=0.00..12269.00 rows=43675 width=114) (actual time=0.007..11.960 rows=35067 loops=3)
+                    Filter: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+                    Rows Removed by Filter: 131600
+                    Buffers: shared hit=9144
+Planning Time: 0.056 ms
+Execution Time: 19.060 ms
+
+--- run 5 ---
+Limit  (cost=14726.11..14732.07 rows=51 width=114) (actual time=16.590..18.770 rows=51 loops=1)
+  Buffers: shared hit=9232
+  ->  Gather Merge  (cost=14726.11..24917.66 rows=87350 width=114) (actual time=16.589..18.765 rows=51 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=9232
+        ->  Sort  (cost=13726.09..13835.28 rows=43675 width=114) (actual time=14.732..14.735 rows=41 loops=3)
+              Sort Key: created_at DESC, id DESC
+              Sort Method: top-N heapsort  Memory: 47kB
+              Buffers: shared hit=9232
+              Worker 0:  Sort Method: top-N heapsort  Memory: 45kB
+              Worker 1:  Sort Method: top-N heapsort  Memory: 46kB
+              ->  Parallel Seq Scan on issues  (cost=0.00..12269.00 rows=43675 width=114) (actual time=0.008..11.860 rows=35067 loops=3)
+                    Filter: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+                    Rows Removed by Filter: 131600
+                    Buffers: shared hit=9144
+Planning Time: 0.050 ms
+Execution Time: 18.805 ms
+

@@ -1,0 +1,113 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+     execution: local
+        script: /workspace/benchmarks/k6_list.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 10 max VUs, 32s max duration (incl. graceful stop):
+              * issue_list: 10 looping VUs for 30s (gracefulStop: 2s)
+
+
+running (01.0s), 10/10 VUs, 281 complete and 0 interrupted iterations
+issue_list   [   3% ] 10 VUs  01.0s/30s
+
+running (02.0s), 10/10 VUs, 560 complete and 0 interrupted iterations
+issue_list   [   7% ] 10 VUs  02.0s/30s
+
+running (03.0s), 10/10 VUs, 841 complete and 0 interrupted iterations
+issue_list   [  10% ] 10 VUs  03.0s/30s
+
+running (04.0s), 10/10 VUs, 1124 complete and 0 interrupted iterations
+issue_list   [  13% ] 10 VUs  04.0s/30s
+
+running (05.0s), 10/10 VUs, 1411 complete and 0 interrupted iterations
+issue_list   [  17% ] 10 VUs  05.0s/30s
+
+running (06.0s), 10/10 VUs, 1699 complete and 0 interrupted iterations
+issue_list   [  20% ] 10 VUs  06.0s/30s
+
+running (07.0s), 10/10 VUs, 1986 complete and 0 interrupted iterations
+issue_list   [  23% ] 10 VUs  07.0s/30s
+
+running (08.0s), 10/10 VUs, 2277 complete and 0 interrupted iterations
+issue_list   [  27% ] 10 VUs  08.0s/30s
+
+running (09.0s), 10/10 VUs, 2566 complete and 0 interrupted iterations
+issue_list   [  30% ] 10 VUs  09.0s/30s
+
+running (10.0s), 10/10 VUs, 2854 complete and 0 interrupted iterations
+issue_list   [  33% ] 10 VUs  10.0s/30s
+
+running (11.0s), 10/10 VUs, 3148 complete and 0 interrupted iterations
+issue_list   [  37% ] 10 VUs  11.0s/30s
+
+running (12.0s), 10/10 VUs, 3436 complete and 0 interrupted iterations
+issue_list   [  40% ] 10 VUs  12.0s/30s
+
+running (13.0s), 10/10 VUs, 3723 complete and 0 interrupted iterations
+issue_list   [  43% ] 10 VUs  13.0s/30s
+
+running (14.0s), 10/10 VUs, 4010 complete and 0 interrupted iterations
+issue_list   [  47% ] 10 VUs  14.0s/30s
+
+running (15.0s), 10/10 VUs, 4293 complete and 0 interrupted iterations
+issue_list   [  50% ] 10 VUs  15.0s/30s
+
+running (16.0s), 10/10 VUs, 4584 complete and 0 interrupted iterations
+issue_list   [  53% ] 10 VUs  16.0s/30s
+
+running (17.0s), 10/10 VUs, 4867 complete and 0 interrupted iterations
+issue_list   [  57% ] 10 VUs  17.0s/30s
+
+running (18.0s), 10/10 VUs, 5153 complete and 0 interrupted iterations
+issue_list   [  60% ] 10 VUs  18.0s/30s
+
+running (19.0s), 10/10 VUs, 5434 complete and 0 interrupted iterations
+issue_list   [  63% ] 10 VUs  19.0s/30s
+
+running (20.0s), 10/10 VUs, 5713 complete and 0 interrupted iterations
+issue_list   [  67% ] 10 VUs  20.0s/30s
+
+running (21.0s), 10/10 VUs, 6004 complete and 0 interrupted iterations
+issue_list   [  70% ] 10 VUs  21.0s/30s
+
+running (22.0s), 10/10 VUs, 6282 complete and 0 interrupted iterations
+issue_list   [  73% ] 10 VUs  22.0s/30s
+
+running (23.0s), 10/10 VUs, 6564 complete and 0 interrupted iterations
+issue_list   [  77% ] 10 VUs  23.0s/30s
+
+running (24.0s), 10/10 VUs, 6848 complete and 0 interrupted iterations
+issue_list   [  80% ] 10 VUs  24.0s/30s
+
+running (25.0s), 10/10 VUs, 7133 complete and 0 interrupted iterations
+issue_list   [  83% ] 10 VUs  25.0s/30s
+
+running (26.0s), 10/10 VUs, 7422 complete and 0 interrupted iterations
+issue_list   [  87% ] 10 VUs  26.0s/30s
+
+running (27.0s), 10/10 VUs, 7706 complete and 0 interrupted iterations
+issue_list   [  90% ] 10 VUs  27.0s/30s
+
+running (28.0s), 10/10 VUs, 7990 complete and 0 interrupted iterations
+issue_list   [  93% ] 10 VUs  28.0s/30s
+
+running (29.0s), 10/10 VUs, 8275 complete and 0 interrupted iterations
+issue_list   [  97% ] 10 VUs  29.0s/30s
+
+running (30.0s), 10/10 VUs, 8559 complete and 0 interrupted iterations
+issue_list   [ 100% ] 10 VUs  30.0s/30s
+http_reqs.count=8569
+http_reqs.rate=285.3805759713154
+http_req_failed.rate=0
+http_req_duration.med=32.810287
+http_req_duration.p95=59.0426896
+http_req_duration.p99=67.94538352
+
+running (30.0s), 00/10 VUs, 8569 complete and 0 interrupted iterations
+issue_list ✓ [ 100% ] 10 VUs  30s

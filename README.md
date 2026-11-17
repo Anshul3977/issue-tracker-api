@@ -151,7 +151,62 @@ CREATE INDEX ix_issues_project_state_created_id
 
 Dataset, from `scripts/seed.py`: 500,000 issues, seed 42, 8 projects, 70% of issues in project `CORE`, states split 20/30/20/25/5 across backlog, todo, in progress, done, and cancelled. k6 is closed-loop: 10 virtual users, 30 seconds, 2 second graceful stop, no think time, `GET /api/v1/issues?project_id={CORE}&state=todo&limit=50&sort=created_at`. The API is one host uvicorn worker. Postgres 16 and Redis 7 run in Docker Compose with `shared_buffers=256MB`, `work_mem=4MB`, and `max_connections=100`.
 
-The measured table is filled in after `make bench` from `benchmarks/load_before.txt`, `benchmarks/load_after.txt`, `benchmarks/explain_before.txt`, and `benchmarks/explain_after.txt`.
+Measured on 2026-11-17T16:18:37Z on this VM: Linux `cursor`, kernel `6.12.113+`, 4 vCPUs (`Intel(R) Xeon(R) Processor`, family 6 model 207, KVM), `Mem: 15Gi` from `free -h` in `benchmarks/environment.txt`. API: CPython 3.12.3, one uvicorn worker on the host. Postgres `(PostgreSQL) 16.16` and `Redis server v=7.4.12` in Docker Compose. k6 `v1.4.0`. Dataset at measurement time, from `benchmarks/dataset.json`: 500000 issues, 20000 comments, 10000 issue-label rows, 40 users, 8 projects. Project `CORE` is id 1 and holds 350373 issues, of which 105201 are `todo`. Issues heap `74907648` bytes. After the composite index: index `26017792` bytes, all indexes on `issues` `59686912` bytes, total relation `134651904` bytes. `CREATE INDEX` took `0.5815179490000446` seconds (`benchmarks/index_build_seconds.txt`). Postgres reported `shared_buffers=256MB`, `work_mem=4MB`, `max_connections=100`.
+
+k6 summary values are the raw `http_req_duration` med / p(95) / p(99), `http_reqs.rate`, and `http_req_failed.rate` from `benchmarks/load_before.json` and `benchmarks/load_after.json`. Latency is milliseconds. Error rate is the fraction of failed HTTP requests.
+
+| | Without the composite index | With `ix_issues_project_state_created_id` |
+| --- | --- | --- |
+| Requests | 2632 | 8569 |
+| Throughput (req/s) | 87.54467330754858 | 285.3805759713154 |
+| p50 latency (ms) | 114.8039735 | 32.810287 |
+| p95 latency (ms) | 156.86522564999999 | 59.0426896 |
+| p99 latency (ms) | 180.97240005 | 67.94538352 |
+| Error rate | 0 | 0 |
+
+`EXPLAIN (ANALYZE, BUFFERS)` ran the same SQLAlchemy statement five times. A SELECT warmed the cache before run 1, so these are not cold-cache numbers. Execution times in order:
+
+- Without the index: 20.416 ms, 19.447 ms, 19.249 ms, 19.060 ms, 18.805 ms
+- With the index: 0.062 ms, 0.075 ms, 0.075 ms, 0.046 ms, 0.035 ms
+
+Run 5 without the index is a parallel sequential scan of `issues`, a top-N heapsort, and a gather merge. It reads 9232 shared buffers and filters out 131600 rows per worker:
+
+```text
+Limit  (cost=14726.11..14732.07 rows=51 width=114) (actual time=16.590..18.770 rows=51 loops=1)
+  Buffers: shared hit=9232
+  ->  Gather Merge  (cost=14726.11..24917.66 rows=87350 width=114) (actual time=16.589..18.765 rows=51 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=9232
+        ->  Sort  (cost=13726.09..13835.28 rows=43675 width=114) (actual time=14.732..14.735 rows=41 loops=3)
+              Sort Key: created_at DESC, id DESC
+              Sort Method: top-N heapsort  Memory: 47kB
+              Buffers: shared hit=9232
+              ->  Parallel Seq Scan on issues  (cost=0.00..12269.00 rows=43675 width=114) (actual time=0.008..11.860 rows=35067 loops=3)
+                    Filter: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+                    Rows Removed by Filter: 131600
+                    Buffers: shared hit=9144
+Planning Time: 0.050 ms
+Execution Time: 18.805 ms
+```
+
+Run 5 with the index stops after 51 rows and 54 shared buffer hits. There is no sort:
+
+```text
+Limit  (cost=0.42..17.72 rows=51 width=114) (actual time=0.011..0.025 rows=51 loops=1)
+  Buffers: shared hit=54
+  ->  Index Scan using ix_issues_project_state_created_id on issues  (cost=0.42..36400.71 rows=107323 width=114) (actual time=0.011..0.021 rows=51 loops=1)
+        Index Cond: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+        Buffers: shared hit=54
+Planning Time: 0.026 ms
+Execution Time: 0.035 ms
+```
+
+The full plans are in `benchmarks/explain_before.txt` and `benchmarks/explain_after.txt`. The endpoint latency does not fall by the same factor as the plan time: after the index, the request is dominated by the auth lookup, the label load, and the application, not by the list scan. The baseline still had `ix_issues_project_id`. The planner did not use it. It sequential-scanned because `CORE` is most of the table.
+
+![Swagger UI](docs/screenshots/swagger.png)
+
+![WebSocket events in a terminal](docs/screenshots/websocket.png)
 
 ## Design decisions
 

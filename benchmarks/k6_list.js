@@ -4,6 +4,7 @@ import { check } from "k6";
 // Fixed closed-loop load against the indexed list path.
 // 10 virtual users, 30s measurement, 2s graceful stop, no think time.
 export const options = {
+  summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
   scenarios: {
     issue_list: {
       executor: "constant-vus",

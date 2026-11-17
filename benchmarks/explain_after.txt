@@ -1,0 +1,70 @@
+label: after
+captured_at: 2026-11-17T16:19:12.659932+00:00
+project_id: 1
+state: todo
+request_limit: 50
+sql_limit: 51
+statement: first page of GET /api/v1/issues?sort=created_at
+
+sql:
+SELECT issues.id, issues.project_id, issues.number, issues.title, issues.description, issues.state, issues.priority, issues.assignee_id, issues.created_at, issues.updated_at 
+FROM issues 
+WHERE issues.project_id = $1::BIGINT AND issues.state = $2::VARCHAR ORDER BY issues.created_at DESC, issues.id DESC 
+ LIMIT $3::INTEGER
+params:
+  project_id_1 = 1
+  state_1 = 'todo'
+  param_1 = 51
+
+indexes:
+  issues_pkey: CREATE UNIQUE INDEX issues_pkey ON public.issues USING btree (id)
+  ix_issues_assignee_id: CREATE INDEX ix_issues_assignee_id ON public.issues USING btree (assignee_id)
+  ix_issues_project_id: CREATE INDEX ix_issues_project_id ON public.issues USING btree (project_id)
+  ix_issues_project_state_created_id: CREATE INDEX ix_issues_project_state_created_id ON public.issues USING btree (project_id, state, created_at DESC, id DESC)
+  uq_issues_project_number: CREATE UNIQUE INDEX uq_issues_project_number ON public.issues USING btree (project_id, number)
+
+--- run 1 ---
+Limit  (cost=0.42..17.72 rows=51 width=114) (actual time=0.018..0.047 rows=51 loops=1)
+  Buffers: shared hit=54
+  ->  Index Scan using ix_issues_project_state_created_id on issues  (cost=0.42..36400.71 rows=107323 width=114) (actual time=0.018..0.044 rows=51 loops=1)
+        Index Cond: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+        Buffers: shared hit=54
+Planning Time: 0.050 ms
+Execution Time: 0.062 ms
+
+--- run 2 ---
+Limit  (cost=0.42..17.72 rows=51 width=114) (actual time=0.026..0.055 rows=51 loops=1)
+  Buffers: shared hit=54
+  ->  Index Scan using ix_issues_project_state_created_id on issues  (cost=0.42..36400.71 rows=107323 width=114) (actual time=0.025..0.051 rows=51 loops=1)
+        Index Cond: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+        Buffers: shared hit=54
+Planning Time: 0.053 ms
+Execution Time: 0.075 ms
+
+--- run 3 ---
+Limit  (cost=0.42..17.72 rows=51 width=114) (actual time=0.026..0.055 rows=51 loops=1)
+  Buffers: shared hit=54
+  ->  Index Scan using ix_issues_project_state_created_id on issues  (cost=0.42..36400.71 rows=107323 width=114) (actual time=0.026..0.052 rows=51 loops=1)
+        Index Cond: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+        Buffers: shared hit=54
+Planning Time: 0.053 ms
+Execution Time: 0.075 ms
+
+--- run 4 ---
+Limit  (cost=0.42..17.72 rows=51 width=114) (actual time=0.015..0.034 rows=51 loops=1)
+  Buffers: shared hit=54
+  ->  Index Scan using ix_issues_project_state_created_id on issues  (cost=0.42..36400.71 rows=107323 width=114) (actual time=0.014..0.030 rows=51 loops=1)
+        Index Cond: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+        Buffers: shared hit=54
+Planning Time: 0.036 ms
+Execution Time: 0.046 ms
+
+--- run 5 ---
+Limit  (cost=0.42..17.72 rows=51 width=114) (actual time=0.011..0.025 rows=51 loops=1)
+  Buffers: shared hit=54
+  ->  Index Scan using ix_issues_project_state_created_id on issues  (cost=0.42..36400.71 rows=107323 width=114) (actual time=0.011..0.021 rows=51 loops=1)
+        Index Cond: ((project_id = '1'::bigint) AND ((state)::text = 'todo'::text))
+        Buffers: shared hit=54
+Planning Time: 0.026 ms
+Execution Time: 0.035 ms
+

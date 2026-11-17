@@ -1,0 +1,18 @@
+{
+  "issue_count": 500000,
+  "comment_count": 20000,
+  "issue_label_count": 10000,
+  "user_count": 40,
+  "project_count": 8,
+  "core_project_id": 1,
+  "core_issue_count": 350373,
+  "core_todo_count": 105201,
+  "issues_heap_bytes": 74907648,
+  "postgres_version": "16.16",
+  "shared_buffers": "256MB",
+  "work_mem": "4MB",
+  "max_connections": "100",
+  "issues_indexes_bytes_after": 59686912,
+  "issues_total_bytes_after": 134651904,
+  "index_bytes": 26017792
+}
